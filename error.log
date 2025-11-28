@@ -1922,3 +1922,5 @@
 [Wed Nov 26 22:30:23.814330 2025] [php:warn] [pid 2712250] [client 10.30.8.106:46330] PHP Warning:  Undefined array key "classes" in /srv/users/etvmgxye/anbbmjg-m2/core/bootstrap.php on line 8
 [Wed Nov 26 22:30:23.814368 2025] [php:warn] [pid 2712250] [client 10.30.8.106:46330] PHP Warning:  foreach() argument must be of type array|object, null given in /srv/users/etvmgxye/anbbmjg-m2/core/bootstrap.php on line 8
 [Wed Nov 26 22:33:44.185087 2025] [php:warn] [pid 2713036] [client 10.30.8.106:47454] PHP Warning:  require_once(/srv/users/etvmgxye/anbbmjg-m2/core../vendor/autoload.php): Failed to open stream: No such file or directory in /srv/users/etvmgxye/anbbmjg-m2/core/bootstrap.php on line 4
+[Thu Nov 27 18:26:33.932774 2025] [php:warn] [pid 3344503] [client 10.30.8.106:39350] PHP Warning:  Undefined variable $posts in /srv/users/etvmgxye/anbbmjg-m2/app/Controller/Site.php on line 10
+[Thu Nov 27 18:26:33.933003 2025] [php:warn] [pid 3344503] [client 10.30.8.106:39350] PHP Warning:  foreach() argument must be of type array|object, null given in /srv/users/etvmgxye/anbbmjg-m2/views/site/post.php on line 4
