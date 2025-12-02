@@ -3,42 +3,66 @@ namespace Src;
 
 use Error;
 
+use FastRoute\RouteCollector;
+use FastRoute\RouteParser\Std;
+use FastRoute\DataGenerator\MarkBased;
+use FastRoute\Dispatcher\MarkBased as Dispatcher;
+use Src\Traits\SingletonTrait;
+
 class Route {
+    use SingletonTrait;
+    private string $currentRoute = '';
+    private $currentHttpMethod;
+    private string $prefix = '';
+    private RouteCollector $routeCollector;
     private static array $routes = [];
-    private static string $prefix = '';
 
-    public static function setPrefix($value) {
-        self::$prefix = $value;
+    public function setPrefix($value):self {
+        $this->prefix = $value;
+        return $this;
     }
 
-    public static function add(string $route, array $action):void {
-        if (!array_key_exists($route, self::$routes)) {
-            self::$routes[$route] = $action;
-        }
+    public static function add($httpMethod, string $route, array $action):self {
+        self::single()->routeCollector->addRoute($httpMethod, $route, $action);
+        self::single()->currentHttpMethod = $httpMethod;
+        self::single()->currentRoute = $route;
+        return self::single();
     }
 
-    public static function start():void {
-        $path = explode('?', $_SERVER['REQUEST_URI'])[0];
-        echo $path;
-        $path = substr($path, strlen(self::$prefix) + 1);
+    public static function group(string $prefix, callable $callback):void {
+        self::single()->routeCollector-addGroup($prefix, $callback);
+        Middleware::single()->group($prefix, $callback);
+    }
 
+    public function start():void {
+        $httpMethod = $_SERVER['REQUEST_METHOD'];
+        $uri = $_SERVER['REQUEST_URI'];
 
-        if (!array_key_exists($path, self::$routes)) {
-            throw new Error('This path does not exist');
+        $pos = strpos($uri, '?');
+        if ($pos) {
+            $uri = substr($uri, 0, $pos);
         }
 
-        $class = self::$routes[$path][0];
-        $action = self::$routes[$path][1];
+        $uri = rawurldecode($uri);
+        $uri = substr($uri, strlen($this->prefix));
 
-        if (!class_exists($class)) {
-            throw new Error('This class does not exist');
+        $dispatcher = new Dispatcher($this->routeCollector->getData());
+
+        $routeInfo = $dispatcher->dispatch($httpMethod, $uri);
+        switch ($routeInfo[0]) {
+            case Dispatcher::NOT_FOUND:
+                throw new Error('NOT FOUND');
+            case Dispatcher::METHOD_NOT_ALLOWED:
+                throw new Error('METHOD NOT ALLOWED');
+            case Dispatcher::FOUND:
+                $handler = $routeInfo[1];
+                $vars = array_values($routeInfo[2]);
+                $vars[] = Middleware::single()->go($httpMethod, $uri, new Request());
+                $class = $handler[0];
+                $action = $handler[1];
+                call_user_func([new $class, $action], ...$vars);
+                break;
         }
-
-        if (!method_exists($class, $action)) {
-            throw new Error('This method does not exits');
-        }
-
-        call_user_func([new $class, $action], new Request());
     }
 
     public function redirect(string $url):void {
@@ -46,10 +70,15 @@ class Route {
     }
 
     public function getUrl(string $url):string {
-        return self::$prefix . $url;
+        return $this->prefix . $url;
     }
 
-    public function __construct(string $prefix = '') {
-        self::setPrefix($prefix);
+    public function __construct() {
+        $this->routeCollector = new RouteCollector(new Std(), new MarkBased());
+    }
+
+    public function middleware(...$middlewares):self {
+        Middleware::single()->add($this->currentHttpMethod, $this->currentRoute, $middlewares);
+        return $this;
     }
 }

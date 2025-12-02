@@ -14,6 +14,12 @@ class Auth {
         }
     }
 
+    public static function generateCSRF():string {
+        $token = md5(time());
+        Session::set('csrf_token', $token);
+        return $token;
+    }
+
     public static function login(IdentityInterface $user):void {
         self::$user = $user;
         Session::set('id', self::$user->getId());
